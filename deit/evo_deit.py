@@ -730,6 +730,32 @@ def evo_deit_tiny_patch16_224(pretrained=False, **kwargs):
     model.default_cfg = _cfg()
     return model
 
+@register_model
+def evo_moe_deit_tiny_patch16_224_expert8_delay_start(
+    pretrained=False,
+    **kwargs,
+):
+    model = evo_deit_tiny_patch16_224(pretrained=pretrained, **kwargs)
+    embed_dim = 192
+    mlp_ratio = 4
+    drop_rate = 0.0
+    
+    mlp_idx = 0
+
+    for name, module in model.named_modules():
+        if isinstance(module, MlpBlock):
+            if mlp_idx < 4 or mlp_idx % 2 == 0:
+                module.mlp = CustomizedMoEMLP(
+                    embed_dim,
+                    embed_dim * mlp_ratio,
+                    moe_num_experts=8,
+                    moe_top_k=2,
+                    drop=drop_rate,
+                )
+
+
+            mlp_idx += 1
+    return model
 
 @register_model
 def moeevo_deit_tiny_patch16_224(pretrained=False, **kwargs):
